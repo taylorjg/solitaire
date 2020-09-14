@@ -71,21 +71,22 @@ const boardClickToBoardPosition = (boardPositions, offsetX, offsetY) => {
   return undefined
 }
 
-const sameBoardPosition = (pos1, pos2) =>
-  pos1[0] === pos2[0] && pos1[1] === pos2[1]
-
-const onBoardClick = (boardElement, boardPositions) => ({ offsetX, offsetY }) => {
-  const boardPosition = boardClickToBoardPosition(boardPositions, offsetX, offsetY)
+const onBoardClick = (solitaire, boardElement) => ({ offsetX, offsetY }) => {
+  const boardPosition = boardClickToBoardPosition(solitaire.boardPositions, offsetX, offsetY)
   if (!boardPosition) {
     return
   }
   const boardPieceElement = findBoardPieceElement(boardElement, boardPosition)
   if (selectedPiece) {
-    if (sameBoardPosition(selectedPiece, boardPosition)) {
+    if (Solitaire.sameBoardPosition(selectedPiece, boardPosition)) {
       selectedPiece = undefined
       boardPieceElement.classList.remove('board-piece--selected')
     } else {
-      // TODO: make move if valid
+      if (solitaire.isValidMove(selectedPiece, boardPosition)) {
+        solitaire.makeMove(selectedPiece, boardPosition)
+        drawBoardPieces(boardElement, solitaire.boardState)
+        selectedPiece = undefined
+      }
     }
   } else {
     selectedPiece = boardPosition
@@ -96,7 +97,7 @@ const onBoardClick = (boardElement, boardPositions) => ({ offsetX, offsetY }) =>
 const main = () => {
   const solitaire = new Solitaire()
   const boardElement = document.querySelector('.board')
-  boardElement.addEventListener('click', onBoardClick(boardElement, solitaire.boardPositions))
+  boardElement.addEventListener('click', onBoardClick(solitaire, boardElement))
   boardElement.style.width = BOARD_SIZE
   boardElement.style.height = BOARD_SIZE
   drawBoardPositions(boardElement, solitaire.boardPositions)
