@@ -5,9 +5,15 @@
   "author": "Jonathan Taylor",
   "license": "MIT",
   "scripts": {
-   "start": "node server"
+    "test": "mocha",
+    "start": "node server"
   },
+  "type": "module",
   "dependencies": {
     "express": "^4.17.1"
+  },
+  "devDependencies": {
+    "chai": "^4.2.0",
+    "mocha": "^8.1.3"
   }
 }
