@@ -1,0 +1,23 @@
+.board-wrapper {
+  align-items: center;
+  display: flex;
+  height: 100vh;
+  justify-content: center;
+  width: 100vw;
+}
+
+.board {
+  background-color: plum;
+}
+
+.board-position {
+  fill: brown;
+}
+
+.piece {
+  color: black;
+}
+
+.piece--selected {
+  color: magenta;
+}
