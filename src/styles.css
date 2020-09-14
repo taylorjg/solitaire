@@ -14,10 +14,10 @@
   fill: brown;
 }
 
-.piece {
-  color: black;
+.board-piece {
+  fill: black;
 }
 
-.piece--selected {
-  color: magenta;
+.board-piece--selected {
+  fill: magenta;
 }
