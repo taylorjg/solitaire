@@ -1,8 +1,8 @@
 import { Solitaire } from './solitaire.js'
 
-const BOARD_SIZE = 400
+const BOARD_SIZE = 600
 const BOARD_POSITION_RADIUS = BOARD_SIZE / 100
-const BOARD_PIECE_RADIUS = BOARD_SIZE / 40
+const BOARD_PIECE_RADIUS = BOARD_SIZE / 32
 
 let selectedPiece = undefined
 

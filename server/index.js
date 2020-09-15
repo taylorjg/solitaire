@@ -1,10 +1,9 @@
 /* eslint-env node */
 
-const path = require('path')
-const express = require('express')
+import express from 'express'
 
 const PORT = process.env.PORT || 3020
-const SRC_FOLDER = path.join(__dirname, '..', 'src')
+const SRC_FOLDER = 'src'
 
 const app = express()
 app.use(express.static(SRC_FOLDER))
