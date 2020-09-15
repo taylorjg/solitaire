@@ -1,7 +1,26 @@
 import * as U from './utils.js'
 
-const CENTRE_X = 3
-const CENTRE_Y = 3
+export class BoardPosition {
+
+  constructor(row, col) {
+    this._row = row
+    this._col = col
+    this._key = `${row}-${col}`
+  }
+
+  get row() { return this._row }
+  get col() { return this._col }
+  get key() { return this._key }
+
+  sameAs = other => this.key === other.key
+
+  static fromKey = key => {
+    const [row, col] = key.split('-').map(Number)
+    return new BoardPosition(row, col)
+  }
+}
+
+const BOARD_POSITION_CENTRE = new BoardPosition(3, 3)
 
 const UP = 0
 const DOWN = 1
@@ -21,52 +40,47 @@ function* boardPositionGenerator() {
   let row = 0
   for (const colRange of colRanges) {
     for (const col of colRange) {
-      yield [row, col]
+      yield new BoardPosition(row, col)
     }
     row += 1
   }
 }
 
-// function* allPossibleActionsGenerator(boardPositions) {
+function* allPossibleActionsGenerator(boardPositions) {
 
-//   const isValidBoardPosition = boardPosition => {
-//     const index = boardPositions.findIndex(item => Solitaire.sameBoardPosition(item, boardPosition))
-//     return index >= 0
-//   }
+  const isValidBoardPosition = boardPosition =>
+    boardPositions.some(item => item.sameAs(boardPosition))
 
-//   const followDirection = (boardPosition, direction) => {
-//     const [row, col] = boardPosition
-//     switch (direction) {
-//       case UP: return [row - 1, col]
-//       case DOWN: return [row + 1, col]
-//       case LEFT: return [row, col - 1]
-//       case RIGHT: return [row, col + 1]
-//     }
-//   }
+  const followDirection = (boardPosition, direction) => {
+    const row = boardPosition.row
+    const col = boardPosition.col
+    switch (direction) {
+      case UP: return new BoardPosition(row - 1, col)
+      case DOWN: return new BoardPosition(row + 1, col)
+      case LEFT: return new BoardPosition(row, col - 1)
+      case RIGHT: return new BoardPosition(row, col + 1)
+    }
+  }
 
-//   for (const from of boardPositions) {
-//     for (const direction of [UP, DOWN, LEFT, RIGHT]) {
-//       const via = followDirection(from, direction)
-//       const to = followDirection(via, direction)
-//       if (isValidBoardPosition(from) &&
-//         isValidBoardPosition(via) &&
-//         isValidBoardPosition(to)) {
-//         const keyFrom = Solitaire.boardPositionToKey(from)
-//         const keyVia = Solitaire.boardPositionToKey(via)
-//         const keyTo = Solitaire.boardPositionToKey(to)
-//         yield { from, via, to, keyFrom, keyVia, keyTo }
-//       }
-//     }
-//   }
-// }
+  for (const from of boardPositions) {
+    for (const direction of [UP, DOWN, LEFT, RIGHT]) {
+      const via = followDirection(from, direction)
+      const to = followDirection(via, direction)
+      if (isValidBoardPosition(from) &&
+        isValidBoardPosition(via) &&
+        isValidBoardPosition(to)) {
+        yield { from, via, to }
+      }
+    }
+  }
+}
 
 const BOARD_POSITIONS = Array.from(boardPositionGenerator())
-// const ALL_POSSIBLE_ACTIONS = Array.from(allPossibleActionsGenerator(BOARD_POSITIONS))
+const ALL_POSSIBLE_ACTIONS = Array.from(allPossibleActionsGenerator(BOARD_POSITIONS))
 
 export class Solitaire {
 
   constructor() {
-    this._actions = Solitaire.allPossibleActions(BOARD_POSITIONS)
     this._boardState = {}
     this.reset()
   }
@@ -76,7 +90,7 @@ export class Solitaire {
   }
 
   get actions() {
-    return this._actions
+    return ALL_POSSIBLE_ACTIONS
   }
 
   get boardState() {
@@ -85,10 +99,10 @@ export class Solitaire {
 
   get validActions() {
     const validActions = []
-    this._actions.forEach(action => {
-      if (this._boardState[action.keyFrom] &&
-        this._boardState[action.keyVia] &&
-        !this._boardState[action.keyTo]) {
+    this.actions.forEach(action => {
+      if (this._boardState[action.from.key] &&
+        this._boardState[action.via.key] &&
+        !this._boardState[action.to.key]) {
         validActions.push(action)
       }
     })
@@ -101,67 +115,25 @@ export class Solitaire {
   makeMove = (from, to) => {
     const action = this._findAction(from, to)
     if (action) {
-      this._boardState[action.keyFrom] = false
-      this._boardState[action.keyVia] = false
-      this._boardState[action.keyTo] = true
+      this._boardState[action.from.key] = false
+      this._boardState[action.via.key] = false
+      this._boardState[action.to.key] = true
     }
   }
 
   reset = () => {
     for (const boardPosition of this.boardPositions) {
-      const key = Solitaire.boardPositionToKey(boardPosition)
-      this._boardState[key] = true
+      this._boardState[boardPosition.key] = true
     }
-    const keyCentre = Solitaire.boardPositionToKey([CENTRE_X, CENTRE_Y])
-    this._boardState[keyCentre] = false
+    this._boardState[BOARD_POSITION_CENTRE.key] = false
   }
 
   _findAction = (from, to) => {
     for (const action of this.validActions) {
-      if (Solitaire.sameBoardPosition(action.from, from) &&
-        Solitaire.sameBoardPosition(action.to, to)) {
+      if (action.from.sameAs(from) && action.to.sameAs(to)) {
         return action
       }
     }
     return undefined
-  }
-
-  static boardPositionToKey = ([row, col]) => `${row}-${col}`
-  static keyToBoardPosition = key => key.split('-').map(Number)
-  static sameBoardPosition = (pos1, pos2) => pos1[0] === pos2[0] && pos1[1] === pos2[1]
-
-  static allPossibleActions = boardPositions => {
-
-    const isValidBoardPosition = boardPosition => {
-      const index = boardPositions.findIndex(item => Solitaire.sameBoardPosition(item, boardPosition))
-      return index >= 0
-    }
-
-    const followDirection = (boardPosition, direction) => {
-      const [row, col] = boardPosition
-      switch (direction) {
-        case UP: return [row - 1, col]
-        case DOWN: return [row + 1, col]
-        case LEFT: return [row, col - 1]
-        case RIGHT: return [row, col + 1]
-      }
-    }
-
-    const actions = []
-    for (const from of boardPositions) {
-      for (const direction of [UP, DOWN, LEFT, RIGHT]) {
-        const via = followDirection(from, direction)
-        const to = followDirection(via, direction)
-        if (isValidBoardPosition(from) &&
-          isValidBoardPosition(via) &&
-          isValidBoardPosition(to)) {
-          const keyFrom = Solitaire.boardPositionToKey(from)
-          const keyVia = Solitaire.boardPositionToKey(via)
-          const keyTo = Solitaire.boardPositionToKey(to)
-          actions.push({ from, via, to, keyFrom, keyVia, keyTo })
-        }
-      }
-    }
-    return actions
   }
 }

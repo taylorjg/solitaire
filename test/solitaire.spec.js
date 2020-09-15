@@ -1,4 +1,4 @@
-import { Solitaire } from '../src/solitaire.js'
+import { Solitaire, BoardPosition } from '../src/solitaire.js'
 import chai from 'chai'
 const expect = chai.expect
 
@@ -29,19 +29,41 @@ describe('Solitaire class', () => {
     expect(solitaire.validActions).to.have.lengthOf(4)
   })
 
-  it('should successfully convert board position to key', () => {
-    const boardPosition = [2, 6]
-    const key = Solitaire.boardPositionToKey(boardPosition)
-    expect(key).to.equal('2-6')
+  // TODO:
+  // validActions()
+  // isValidMove()
+  // makeMove()
+  // reset()
+})
+
+describe('BoardPosition class', () => {
+
+  it('should successfully construct BoardPosition', () => {
+    const boardPosition = new BoardPosition(2, 6)
+    expect(boardPosition.row).to.equal(2)
+    expect(boardPosition.col).to.equal(6)
+    expect(boardPosition.key).to.equal('2-6')
   })
 
   it('should successfully convert key to board position', () => {
     const key = '5-1'
-    const boardPosition = Solitaire.keyToBoardPosition(key)
-    expect(boardPosition).to.deep.equal([5, 1])
+    const boardPosition = BoardPosition.fromKey(key)
+    expect(boardPosition.row).to.equal(5)
+    expect(boardPosition.col).to.equal(1)
+    expect(boardPosition.key).to.equal('5-1')
   })
 
-  // TODO:
-  // makeMove()
-  // reset()
+  it('should recognise same board positions', () => {
+    const boardPosition1 = new BoardPosition(3, 4)
+    const boardPosition2 = new BoardPosition(3, 4)
+    expect(boardPosition1.sameAs(boardPosition2)).to.be.true
+    expect(boardPosition2.sameAs(boardPosition1)).to.be.true
+  })
+
+  it('should recognise different board positions', () => {
+    const boardPosition1 = new BoardPosition(3, 4)
+    const boardPosition2 = new BoardPosition(4, 4)
+    expect(boardPosition1.sameAs(boardPosition2)).to.be.false
+    expect(boardPosition2.sameAs(boardPosition1)).to.be.false
+  })
 })

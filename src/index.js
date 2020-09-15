@@ -1,10 +1,10 @@
-import { Solitaire } from './solitaire.js'
+import { Solitaire, BoardPosition } from './solitaire.js'
 
-const BOARD_SIZE = 600
+const BOARD_SIZE = 400
 const BOARD_POSITION_RADIUS = BOARD_SIZE / 100
 const BOARD_PIECE_RADIUS = BOARD_SIZE / 32
 
-let selectedPiece = undefined
+let selectedBoardPosition = undefined
 
 const createSvgElement = (elementName, cssClass, attributes = {}) => {
   const element = document.createElementNS('http://www.w3.org/2000/svg', elementName)
@@ -14,13 +14,30 @@ const createSvgElement = (elementName, cssClass, attributes = {}) => {
   return element
 }
 
-const drawBoardPositions = (boardElement, boardPositions) => {
-  for (const [row, col] of boardPositions) {
-    const attributes = {
-      cx: BOARD_SIZE / 8 * (col + 1),
-      cy: BOARD_SIZE / 8 * (row + 1),
-      r: BOARD_POSITION_RADIUS
+const boardPositionToSvgCoords = boardPosition =>
+  [
+    BOARD_SIZE / 8 * (boardPosition.col + 1),
+    BOARD_SIZE / 8 * (boardPosition.row + 1)
+  ]
+
+const svgCoordsToBoardPosition = (boardPositions, x, y) => {
+  for (const boardPosition of boardPositions) {
+    const rowY = BOARD_SIZE / 8 * (boardPosition.row + 1)
+    const colX = BOARD_SIZE / 8 * (boardPosition.col + 1)
+    const dx = Math.abs(colX - x)
+    const dy = Math.abs(rowY - y)
+    if (dx <= BOARD_PIECE_RADIUS && dy <= BOARD_PIECE_RADIUS) {
+      return boardPosition
     }
+  }
+  return undefined
+}
+
+const drawBoardPositions = (boardElement, boardPositions) => {
+  for (const boardPosition of boardPositions) {
+    const [cx, cy] = boardPositionToSvgCoords(boardPosition)
+    const r = BOARD_POSITION_RADIUS
+    const attributes = { cx, cy, r }
     const boardPositionElement = createSvgElement('circle', 'board-position', attributes)
     boardElement.appendChild(boardPositionElement)
   }
@@ -35,12 +52,10 @@ const drawBoardPieces = (boardElement, boardState) => {
     if (!value) {
       continue
     }
-    const [row, col] = Solitaire.keyToBoardPosition(key)
-    const attributes = {
-      cx: BOARD_SIZE / 8 * (col + 1),
-      cy: BOARD_SIZE / 8 * (row + 1),
-      r: BOARD_PIECE_RADIUS
-    }
+    const boardPosition = BoardPosition.fromKey(key)
+    const [cx, cy] = boardPositionToSvgCoords(boardPosition)
+    const r = BOARD_PIECE_RADIUS
+    const attributes = { cx, cy, r }
     const boardPieceElement = createSvgElement('circle', 'board-piece', attributes)
     boardPieceElement.dataset.key = key
     boardElement.appendChild(boardPieceElement)
@@ -48,49 +63,54 @@ const drawBoardPieces = (boardElement, boardState) => {
 }
 
 const findBoardPieceElement = (boardElement, boardPosition) => {
-  const key = Solitaire.boardPositionToKey(boardPosition)
   const boardPieceElements = boardElement.querySelectorAll('.board-piece')
   for (const boardPieceElement of boardPieceElements) {
-    if (boardPieceElement.dataset.key === key) {
+    if (boardPieceElement.dataset.key === boardPosition.key) {
       return boardPieceElement
     }
   }
   return undefined
 }
 
-const boardClickToBoardPosition = (boardPositions, offsetX, offsetY) => {
-  for (const [row, col] of boardPositions) {
-    const rowY = BOARD_SIZE / 8 * (row + 1)
-    const colX = BOARD_SIZE / 8 * (col + 1)
-    const dx = Math.abs(colX - offsetX)
-    const dy = Math.abs(rowY - offsetY)
-    if (dx <= BOARD_PIECE_RADIUS && dy <= BOARD_PIECE_RADIUS) {
-      return [row, col]
-    }
-  }
-  return undefined
-}
+// TODO:
+// selectBoardPiece(boardPosition)
+// deselectBoardPiece(boardPosition)
 
 const onBoardClick = (solitaire, boardElement) => ({ offsetX, offsetY }) => {
-  const boardPosition = boardClickToBoardPosition(solitaire.boardPositions, offsetX, offsetY)
-  if (!boardPosition) {
+  const clickedBoardPosition = svgCoordsToBoardPosition(solitaire.boardPositions, offsetX, offsetY)
+  if (!clickedBoardPosition) {
     return
   }
-  const boardPieceElement = findBoardPieceElement(boardElement, boardPosition)
-  if (selectedPiece) {
-    if (Solitaire.sameBoardPosition(selectedPiece, boardPosition)) {
-      selectedPiece = undefined
+  const boardPieceElement = findBoardPieceElement(boardElement, clickedBoardPosition)
+  if (selectedBoardPosition) {
+    if (selectedBoardPosition.sameAs(clickedBoardPosition)) {
+      // deselectBoardPiece(boardPosition)
+      selectedBoardPosition = undefined
       boardPieceElement.classList.remove('board-piece--selected')
     } else {
-      if (solitaire.isValidMove(selectedPiece, boardPosition)) {
-        solitaire.makeMove(selectedPiece, boardPosition)
-        drawBoardPieces(boardElement, solitaire.boardState)
-        selectedPiece = undefined
+      if (boardPieceElement) {
+        const oldBoardPieceElement = findBoardPieceElement(boardElement, selectedBoardPosition)
+        if (oldBoardPieceElement) {
+          // deselectBoardPiece(boardPosition)
+          oldBoardPieceElement.classList.remove('board-piece--selected')
+        }
+        // selectBoardPiece(boardPosition)
+        selectedBoardPosition = clickedBoardPosition
+        boardPieceElement.classList.add('board-piece--selected')
+      } else {
+        if (solitaire.isValidMove(selectedBoardPosition, clickedBoardPosition)) {
+          solitaire.makeMove(selectedBoardPosition, clickedBoardPosition)
+          drawBoardPieces(boardElement, solitaire.boardState)
+          selectedBoardPosition = undefined
+        }
       }
     }
   } else {
-    selectedPiece = boardPosition
-    boardPieceElement.classList.add('board-piece--selected')
+    if (boardPieceElement) {
+      // selectBoardPiece(boardPosition)
+      selectedBoardPosition = clickedBoardPosition
+      boardPieceElement.classList.add('board-piece--selected')
+    }
   }
 }
 
