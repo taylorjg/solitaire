@@ -5,7 +5,7 @@ export class BoardPosition {
   constructor(row, col) {
     this._row = row
     this._col = col
-    this._key = `${row}-${col}`
+    this._key = `${row}:${col}`
   }
 
   get row() { return this._row }
@@ -15,12 +15,10 @@ export class BoardPosition {
   sameAs = other => this.key === other.key
 
   static fromKey = key => {
-    const [row, col] = key.split('-').map(Number)
+    const [row, col] = key.split(':').map(Number)
     return new BoardPosition(row, col)
   }
 }
-
-const BOARD_POSITION_CENTRE = new BoardPosition(3, 3)
 
 const UP = 0
 const DOWN = 1
@@ -46,10 +44,10 @@ function* boardPositionGenerator() {
   }
 }
 
-function* allPossibleActionsGenerator(boardPositions) {
+function* allPossibleActionsGenerator() {
 
   const isValidBoardPosition = boardPosition =>
-    boardPositions.some(item => item.sameAs(boardPosition))
+    BOARD_POSITIONS.some(item => item.sameAs(boardPosition))
 
   const followDirection = (boardPosition, direction) => {
     const row = boardPosition.row
@@ -62,7 +60,7 @@ function* allPossibleActionsGenerator(boardPositions) {
     }
   }
 
-  for (const from of boardPositions) {
+  for (const from of BOARD_POSITIONS) {
     for (const direction of [UP, DOWN, LEFT, RIGHT]) {
       const via = followDirection(from, direction)
       const to = followDirection(via, direction)
@@ -76,37 +74,18 @@ function* allPossibleActionsGenerator(boardPositions) {
 }
 
 const BOARD_POSITIONS = Array.from(boardPositionGenerator())
-const ALL_POSSIBLE_ACTIONS = Array.from(allPossibleActionsGenerator(BOARD_POSITIONS))
+const BOARD_POSITION_CENTRE = new BoardPosition(3, 3)
+const ALL_POSSIBLE_ACTIONS = Array.from(allPossibleActionsGenerator())
 
 export class Solitaire {
 
   constructor() {
-    this._boardState = {}
+    this._boardState = new Map()
     this.reset()
-  }
-
-  get boardPositions() {
-    return BOARD_POSITIONS
-  }
-
-  get actions() {
-    return ALL_POSSIBLE_ACTIONS
   }
 
   get boardState() {
     return this._boardState
-  }
-
-  get validActions() {
-    const validActions = []
-    this.actions.forEach(action => {
-      if (this._boardState[action.from.key] &&
-        this._boardState[action.via.key] &&
-        !this._boardState[action.to.key]) {
-        validActions.push(action)
-      }
-    })
-    return validActions
   }
 
   isValidMove = (from, to) =>
@@ -115,25 +94,39 @@ export class Solitaire {
   makeMove = (from, to) => {
     const action = this._findAction(from, to)
     if (action) {
-      this._boardState[action.from.key] = false
-      this._boardState[action.via.key] = false
-      this._boardState[action.to.key] = true
+      this.boardState.set(action.from.key, false)
+      this.boardState.set(action.via.key, false)
+      this.boardState.set(action.to.key, true)
     }
   }
 
   reset = () => {
-    for (const boardPosition of this.boardPositions) {
-      this._boardState[boardPosition.key] = true
+    for (const boardPosition of BOARD_POSITIONS) {
+      const value = !boardPosition.sameAs(BOARD_POSITION_CENTRE)
+      this.boardState.set(boardPosition.key, value)
     }
-    this._boardState[BOARD_POSITION_CENTRE.key] = false
   }
 
   _findAction = (from, to) => {
-    for (const action of this.validActions) {
+    for (const action of this._validActions()) {
       if (action.from.sameAs(from) && action.to.sameAs(to)) {
         return action
       }
     }
     return undefined
+  }
+
+  _validActions = () =>
+    ALL_POSSIBLE_ACTIONS.filter(action =>
+      this.boardState.get(action.from.key) &&
+      this.boardState.get(action.via.key) &&
+      !this.boardState.get(action.to.key)
+    )
+}
+
+export class SolitaireEnv {
+
+  constructor() {
+    this._solitaire = new Solitaire()
   }
 }

@@ -20,12 +20,12 @@ const boardPositionToSvgCoords = boardPosition =>
     BOARD_SIZE / 8 * (boardPosition.row + 1)
   ]
 
-const svgCoordsToBoardPosition = (boardPositions, x, y) => {
-  for (const boardPosition of boardPositions) {
-    const rowY = BOARD_SIZE / 8 * (boardPosition.row + 1)
-    const colX = BOARD_SIZE / 8 * (boardPosition.col + 1)
-    const dx = Math.abs(colX - x)
-    const dy = Math.abs(rowY - y)
+const svgCoordsToBoardPosition = (boardState, x, y) => {
+  for (const key of boardState.keys()) {
+    const boardPosition = BoardPosition.fromKey(key)
+    const [boardPositionX, boardPositionY] = boardPositionToSvgCoords(boardPosition)
+    const dx = Math.abs(boardPositionX - x)
+    const dy = Math.abs(boardPositionY - y)
     if (dx <= BOARD_PIECE_RADIUS && dy <= BOARD_PIECE_RADIUS) {
       return boardPosition
     }
@@ -33,8 +33,9 @@ const svgCoordsToBoardPosition = (boardPositions, x, y) => {
   return undefined
 }
 
-const drawBoardPositions = (boardElement, boardPositions) => {
-  for (const boardPosition of boardPositions) {
+const drawBoardPositions = (boardElement, boardState) => {
+  for (const key of boardState.keys()) {
+    const boardPosition = BoardPosition.fromKey(key)
     const [cx, cy] = boardPositionToSvgCoords(boardPosition)
     const r = BOARD_POSITION_RADIUS
     const attributes = { cx, cy, r }
@@ -48,7 +49,7 @@ const drawBoardPieces = (boardElement, boardState) => {
   for (const boardPieceElement of boardPieceElements) {
     boardElement.removeChild(boardPieceElement)
   }
-  for (const [key, value] of Object.entries(boardState)) {
+  for (const [key, value] of boardState.entries()) {
     if (!value) {
       continue
     }
@@ -77,7 +78,7 @@ const findBoardPieceElement = (boardElement, boardPosition) => {
 // deselectBoardPiece(boardPosition)
 
 const onBoardClick = (solitaire, boardElement) => ({ offsetX, offsetY }) => {
-  const clickedBoardPosition = svgCoordsToBoardPosition(solitaire.boardPositions, offsetX, offsetY)
+  const clickedBoardPosition = svgCoordsToBoardPosition(solitaire.boardState, offsetX, offsetY)
   if (!clickedBoardPosition) {
     return
   }
@@ -120,7 +121,7 @@ const main = () => {
   boardElement.addEventListener('click', onBoardClick(solitaire, boardElement))
   boardElement.style.width = BOARD_SIZE
   boardElement.style.height = BOARD_SIZE
-  drawBoardPositions(boardElement, solitaire.boardPositions)
+  drawBoardPositions(boardElement, solitaire.boardState)
   drawBoardPieces(boardElement, solitaire.boardState)
 }
 
