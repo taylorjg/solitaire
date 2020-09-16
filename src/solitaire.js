@@ -93,17 +93,26 @@ export class Solitaire {
 
   makeMove = (from, to) => {
     const action = this._findAction(from, to)
-    if (action) {
-      this.boardState.set(action.from.key, false)
-      this.boardState.set(action.via.key, false)
-      this.boardState.set(action.to.key, true)
-    }
+    this._makeMove(action)
+  }
+
+  makeMoveByActionIndex = actionIndex => {
+    const action = ALL_POSSIBLE_ACTIONS[actionIndex]
+    this._makeMove(action)
   }
 
   reset = () => {
     for (const boardPosition of BOARD_POSITIONS) {
       const value = !boardPosition.sameAs(BOARD_POSITION_CENTRE)
       this.boardState.set(boardPosition.key, value)
+    }
+  }
+
+  _makeMove = action => {
+    if (action) {
+      this.boardState.set(action.from.key, false)
+      this.boardState.set(action.via.key, false)
+      this.boardState.set(action.to.key, true)
     }
   }
 
@@ -128,5 +137,35 @@ export class SolitaireEnv {
 
   constructor() {
     this._solitaire = new Solitaire()
+  }
+
+  get boardState() {
+    return this._solitaire.boardState
+  }
+
+  get numActions() {
+    return ALL_POSSIBLE_ACTIONS.length
+  }
+
+  get validActionIndices() {
+    const indices = []
+    ALL_POSSIBLE_ACTIONS.forEach((action, index) => {
+      if (this.boardState.get(action.from.key) &&
+        this.boardState.get(action.via.key) &&
+        !this.boardState.get(action.to.key)) {
+        indices.push(index)
+      }
+    })
+    return indices
+  }
+
+  step = actionIndex => {
+    this._solitaire.makeMoveByActionIndex(actionIndex)
+    // TODO: return { observation, reward, done, info }
+  }
+
+  reset = () => {
+    this._solitaire.reset()
+    // TODO: return { observation, reward, done, info }
   }
 }

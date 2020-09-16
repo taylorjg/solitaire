@@ -2,35 +2,92 @@ import { Solitaire, SolitaireEnv, BoardPosition } from '../src/solitaire.js'
 import chai from 'chai'
 const expect = chai.expect
 
+const expectInitialBoardState = boardState => {
+  const boardStateEntries = Array.from(boardState.entries())
+  const occupiedKvps = boardStateEntries.filter(([, value]) => value === true)
+  const unoccupiedKvps = boardStateEntries.filter(([, value]) => value === false)
+  expect(occupiedKvps).to.have.lengthOf(32)
+  expect(unoccupiedKvps).to.have.lengthOf(1)
+  const unoccupiedBoardPositionKey = unoccupiedKvps[0][0]
+  expect(unoccupiedBoardPositionKey).to.equal('3:3')
+}
+
+const expectSolvedBoardState = boardState => {
+  const boardStateEntries = Array.from(boardState.entries())
+  const occupiedKvps = boardStateEntries.filter(([, value]) => value === true)
+  const unoccupiedKvps = boardStateEntries.filter(([, value]) => value === false)
+  expect(occupiedKvps).to.have.lengthOf(1)
+  expect(unoccupiedKvps).to.have.lengthOf(32)
+  const occupiedBoardPositionKey = occupiedKvps[0][0]
+  expect(occupiedBoardPositionKey).to.equal('3:3')
+}
+
 describe('Solitaire class', () => {
 
   it('should have the expected initial state', () => {
     const solitaire = new Solitaire()
-    const boardStateEntries = Array.from(solitaire.boardState.entries())
-    const occupiedKvps = boardStateEntries.filter(([, value]) => value === true)
-    const unoccupiedKvps = boardStateEntries.filter(([, value]) => value === false)
-    expect(occupiedKvps).to.have.lengthOf(32)
-    expect(unoccupiedKvps).to.have.lengthOf(1)
-    const unoccupiedBoardPositionKey = unoccupiedKvps[0][0]
-    expect(unoccupiedBoardPositionKey).to.equal('3:3')
+    expectInitialBoardState(solitaire.boardState)
   })
 
-  // isValidMove()
-  // makeMove()
-  // reset()
+  // TODO: add tests for:
+  // - isValidMove() => true
+  // - isValidMove() => false
+  // - makeMove()
+  // - reset()
 })
 
 describe('SolitaireEnv class', () => {
 
-  // it('should have the expected number of initial valid actions', () => {
-  //   const solitaireEnv = new SolitaireEnv()
-  //   expect(solitaireEnv.validActions).to.have.lengthOf(4)
-  // })
+  const solution = [
+    68,
+    49, 71, 33, 75, 71,
+    5, 11, 20, 46, 11,
+    27, 3, 40, 1, 3,
+    69, 65, 57, 28, 65,
+    20, 12, 49, 57, 62, 27,
+    39, 7, 35, 44
+  ]
 
-  // it('should have the expected number of possible actions', () => {
-  //   const solitaireEnv = new SolitaireEnv()
-  //   expect(solitaireEnv.actions).to.have.lengthOf(76)
-  // })
+  it('should have the expected initial state', () => {
+    const solitaireEnv = new SolitaireEnv()
+    expectInitialBoardState(solitaireEnv.boardState)
+  })
+
+  it('should have the expected number of possible actions', () => {
+    const solitaireEnv = new SolitaireEnv()
+    expect(solitaireEnv.numActions).to.equal(76)
+  })
+
+  it('should have the expected number of initial valid action indices', () => {
+    const solitaireEnv = new SolitaireEnv()
+    expect(solitaireEnv.validActionIndices).to.have.lengthOf(4)
+  })
+
+  it('should have single piece left in centre after stepping through solution', () => {
+    const solitaireEnv = new SolitaireEnv()
+    for (const actionIndex of solution) {
+      solitaireEnv.step(actionIndex)
+    }
+    expectSolvedBoardState(solitaireEnv.boardState)
+  })
+
+  it('should reset board properly after making a number of moves', () => {
+    const numMoves = 10
+    const solitaireEnv = new SolitaireEnv()
+    for (const actionIndex of solution.slice(0, numMoves)) {
+      solitaireEnv.step(actionIndex)
+    }
+
+    const boardStateEntries = Array.from(solitaireEnv.boardState.entries())
+    const occupiedKvps = boardStateEntries.filter(([, value]) => value === true)
+    const unoccupiedKvps = boardStateEntries.filter(([, value]) => value === false)
+    expect(occupiedKvps).to.have.lengthOf(32 - numMoves)
+    expect(unoccupiedKvps).to.have.lengthOf(1 + numMoves)
+
+    solitaireEnv.reset()
+
+    expectInitialBoardState(solitaireEnv.boardState)
+  })
 })
 
 describe('BoardPosition class', () => {
