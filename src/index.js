@@ -73,9 +73,15 @@ const findBoardPieceElement = (boardElement, boardPosition) => {
   return undefined
 }
 
-// TODO:
-// selectBoardPiece(boardPosition)
-// deselectBoardPiece(boardPosition)
+const updateSelectedBoardPiece = boardElement => {
+  const boardPieceElements = boardElement.querySelectorAll('.board-piece')
+  for (const boardPieceElement of boardPieceElements) {
+    boardPieceElement.classList.remove('board-piece--selected')
+    if (selectedBoardPosition && boardPieceElement.dataset.key === selectedBoardPosition.key) {
+      boardPieceElement.classList.add('board-piece--selected')
+    }
+  }
+}
 
 const onBoardClick = (solitaire, boardElement) => ({ offsetX, offsetY }) => {
   const clickedBoardPosition = svgCoordsToBoardPosition(solitaire.boardState, offsetX, offsetY)
@@ -85,19 +91,10 @@ const onBoardClick = (solitaire, boardElement) => ({ offsetX, offsetY }) => {
   const boardPieceElement = findBoardPieceElement(boardElement, clickedBoardPosition)
   if (selectedBoardPosition) {
     if (selectedBoardPosition.sameAs(clickedBoardPosition)) {
-      // deselectBoardPiece(boardPosition)
       selectedBoardPosition = undefined
-      boardPieceElement.classList.remove('board-piece--selected')
     } else {
       if (boardPieceElement) {
-        const oldBoardPieceElement = findBoardPieceElement(boardElement, selectedBoardPosition)
-        if (oldBoardPieceElement) {
-          // deselectBoardPiece(boardPosition)
-          oldBoardPieceElement.classList.remove('board-piece--selected')
-        }
-        // selectBoardPiece(boardPosition)
         selectedBoardPosition = clickedBoardPosition
-        boardPieceElement.classList.add('board-piece--selected')
       } else {
         if (solitaire.isValidMove(selectedBoardPosition, clickedBoardPosition)) {
           solitaire.makeMove(selectedBoardPosition, clickedBoardPosition)
@@ -108,11 +105,10 @@ const onBoardClick = (solitaire, boardElement) => ({ offsetX, offsetY }) => {
     }
   } else {
     if (boardPieceElement) {
-      // selectBoardPiece(boardPosition)
       selectedBoardPosition = clickedBoardPosition
-      boardPieceElement.classList.add('board-piece--selected')
     }
   }
+  updateSelectedBoardPiece(boardElement)
 }
 
 const main = () => {
