@@ -2,6 +2,16 @@ import { Solitaire, SolitaireEnv, BoardPosition } from '../src/solitaire.js'
 import chai from 'chai'
 const expect = chai.expect
 
+const solution = [
+  68,
+  49, 71, 33, 75, 71,
+  5, 11, 20, 46, 11,
+  27, 3, 40, 1, 3,
+  69, 65, 57, 28, 65,
+  20, 12, 49, 57, 62, 27,
+  39, 7, 35, 44
+]
+
 const expectInitialBoardState = boardState => {
   const boardStateEntries = Array.from(boardState.entries())
   const occupiedKvps = boardStateEntries.filter(([, value]) => value === true)
@@ -29,6 +39,18 @@ describe('Solitaire class', () => {
     expectInitialBoardState(solitaire.boardState)
   })
 
+  it('should have single piece left in centre after making all solution moves', () => {
+    const solitaire = new Solitaire()
+    expect(solitaire.done).to.be.false
+    for (const actionIndex of solution) {
+      solitaire.makeMoveByActionIndex(actionIndex)
+    }
+    expectSolvedBoardState(solitaire.boardState)
+    expect(solitaire.done).to.be.true
+    solitaire.reset()
+    expect(solitaire.done).to.be.false
+  })
+
   // TODO: add tests for:
   // - isValidMove() => true
   // - isValidMove() => false
@@ -37,16 +59,6 @@ describe('Solitaire class', () => {
 })
 
 describe('SolitaireEnv class', () => {
-
-  const solution = [
-    68,
-    49, 71, 33, 75, 71,
-    5, 11, 20, 46, 11,
-    27, 3, 40, 1, 3,
-    69, 65, 57, 28, 65,
-    20, 12, 49, 57, 62, 27,
-    39, 7, 35, 44
-  ]
 
   it('should have the expected initial state', () => {
     const solitaireEnv = new SolitaireEnv()
@@ -65,10 +77,14 @@ describe('SolitaireEnv class', () => {
 
   it('should have single piece left in centre after stepping through solution', () => {
     const solitaireEnv = new SolitaireEnv()
+    expect(solitaireEnv.done).to.be.false
     for (const actionIndex of solution) {
       solitaireEnv.step(actionIndex)
     }
     expectSolvedBoardState(solitaireEnv.boardState)
+    expect(solitaireEnv.done).to.be.true
+    solitaireEnv.reset()
+    expect(solitaireEnv.done).to.be.false
   })
 
   it('should reset board properly after making a number of moves', () => {

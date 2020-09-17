@@ -88,6 +88,10 @@ export class Solitaire {
     return this._boardState
   }
 
+  get done() {
+    return this._validActions().length === 0
+  }
+
   isValidMove = (from, to) =>
     Boolean(this._findAction(from, to))
 
@@ -141,6 +145,10 @@ export class SolitaireEnv {
 
   get boardState() {
     return this._solitaire.boardState
+  }
+
+  get done() {
+    return this._solitaire.done
   }
 
   get numActions() {
