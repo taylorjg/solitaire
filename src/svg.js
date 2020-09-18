@@ -61,6 +61,26 @@ export const drawBoardPieces = (boardElement, boardState) => {
   }
 }
 
+export const findBoardPieceElement = (boardElement, boardPosition) => {
+  const boardPieceElements = boardElement.querySelectorAll('.board-piece')
+  for (const boardPieceElement of boardPieceElements) {
+    if (boardPieceElement.dataset.key === boardPosition.key) {
+      return boardPieceElement
+    }
+  }
+  return undefined
+}
+
+export const updateSelectedBoardPiece = (boardElement, selectedBoardPosition) => {
+  const boardPieceElements = boardElement.querySelectorAll('.board-piece')
+  for (const boardPieceElement of boardPieceElements) {
+    boardPieceElement.classList.remove('board-piece--selected')
+    if (selectedBoardPosition && boardPieceElement.dataset.key === selectedBoardPosition.key) {
+      boardPieceElement.classList.add('board-piece--selected')
+    }
+  }
+}
+
 export const initialiseBoard = boardElement => {
   boardElement.style.width = BOARD_SIZE
   boardElement.style.height = BOARD_SIZE

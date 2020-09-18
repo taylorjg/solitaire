@@ -2,27 +2,40 @@ import { SolitaireEnv } from './solitaire.js'
 import * as svg from './svg.js'
 import * as U from './utils.js'
 
-const onMove = (solitaireEnv, boardElement) => {
+const onMove = async (buttons, solitaireEnv, boardElement) => {
   if (solitaireEnv.done) return
+  const savedDisabled = buttons.moveButton.disabled
+  buttons.moveButton.disabled = true
   const validActionIndices = solitaireEnv.validActionIndices
   const randomIndex = Math.floor(Math.random() * validActionIndices.length)
   const actionIndex = validActionIndices[randomIndex]
+  const action = solitaireEnv.action(actionIndex)
+  svg.updateSelectedBoardPiece(boardElement, action.from)
+  await U.delay(250)
   solitaireEnv.step(actionIndex)
+  svg.updateSelectedBoardPiece(boardElement, undefined)
   svg.drawBoardPieces(boardElement, solitaireEnv.boardState)
+  buttons.moveButton.disabled = savedDisabled
 }
 
-const onAuto = async (solitaireEnv, boardElement) => {
+const onAuto = async (buttons, solitaireEnv, boardElement) => {
+  buttons.moveButton.disabled = true
+  buttons.autoButton.disabled = true
+  buttons.resetButton.disabled = true
   if (solitaireEnv.done) {
-    onReset(solitaireEnv, boardElement)
+    onReset(buttons, solitaireEnv, boardElement)
   }
   for (;;) {
     if (solitaireEnv.done) break
-    onMove(solitaireEnv, boardElement)
-    await U.delay(100)
+    await onMove(buttons, solitaireEnv, boardElement)
+    await U.delay(250)
   }
+  buttons.moveButton.disabled = false
+  buttons.autoButton.disabled = false
+  buttons.resetButton.disabled = false
 }
 
-const onReset = (solitaireEnv, boardElement) => {
+const onReset = (_buttons, solitaireEnv, boardElement) => {
   solitaireEnv.reset()
   svg.drawBoardPieces(boardElement, solitaireEnv.boardState)
 }
@@ -37,9 +50,10 @@ const main = async () => {
     const moveButton = document.getElementById('move-btn')
     const autoButton = document.getElementById('auto-btn')
     const resetButton = document.getElementById('reset-btn')
-    moveButton.addEventListener('click', () => onMove(solitaireEnv, boardElement))
-    autoButton.addEventListener('click', () => onAuto(solitaireEnv, boardElement))
-    resetButton.addEventListener('click', () => onReset(solitaireEnv, boardElement))
+    const buttons = { moveButton, autoButton, resetButton }
+    moveButton.addEventListener('click', () => onMove(buttons, solitaireEnv, boardElement))
+    autoButton.addEventListener('click', () => onAuto(buttons, solitaireEnv, boardElement))
+    resetButton.addEventListener('click', () => onReset(buttons, solitaireEnv, boardElement))
   } catch (error) {
     console.log(`[main] ERROR: ${error.message}`)
   }
