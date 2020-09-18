@@ -40,15 +40,21 @@ describe('Solitaire class', () => {
   })
 
   it('should have single piece left in centre after making all solution moves', () => {
+
     const solitaire = new Solitaire()
     expect(solitaire.done).to.be.false
+    expect(solitaire.solved).to.be.false
+
     for (const actionIndex of solution) {
       solitaire.makeMoveByActionIndex(actionIndex)
     }
     expectSolvedBoardState(solitaire.boardState)
     expect(solitaire.done).to.be.true
+    expect(solitaire.solved).to.be.true
+
     solitaire.reset()
     expect(solitaire.done).to.be.false
+    expect(solitaire.solved).to.be.false
   })
 
   // TODO: add tests for:
@@ -76,15 +82,21 @@ describe('SolitaireEnv class', () => {
   })
 
   it('should have single piece left in centre after stepping through solution', () => {
+
     const solitaireEnv = new SolitaireEnv()
     expect(solitaireEnv.done).to.be.false
+    expect(solitaireEnv.solved).to.be.false
+
     for (const actionIndex of solution) {
       solitaireEnv.step(actionIndex)
     }
     expectSolvedBoardState(solitaireEnv.boardState)
     expect(solitaireEnv.done).to.be.true
+    expect(solitaireEnv.solved).to.be.true
+
     solitaireEnv.reset()
     expect(solitaireEnv.done).to.be.false
+    expect(solitaireEnv.solved).to.be.false
   })
 
   it('should reset board properly after making a number of moves', () => {

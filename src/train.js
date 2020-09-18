@@ -12,7 +12,10 @@ const onMove = async (buttons, solitaireEnv, boardElement) => {
   const action = solitaireEnv.action(actionIndex)
   svg.updateSelectedBoardPiece(boardElement, action.from)
   await U.delay(250)
-  solitaireEnv.step(actionIndex)
+  const { observation, reward, done } = solitaireEnv.step(actionIndex)
+  if (done) {
+    console.log({ observation, reward, done })
+  }
   svg.updateSelectedBoardPiece(boardElement, undefined)
   svg.drawBoardPieces(boardElement, solitaireEnv.boardState)
   buttons.moveButton.disabled = savedDisabled
@@ -25,7 +28,7 @@ const onAuto = async (buttons, solitaireEnv, boardElement) => {
   if (solitaireEnv.done) {
     onReset(buttons, solitaireEnv, boardElement)
   }
-  for (;;) {
+  for (; ;) {
     if (solitaireEnv.done) break
     await onMove(buttons, solitaireEnv, boardElement)
     await U.delay(250)

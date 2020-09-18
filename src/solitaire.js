@@ -92,6 +92,16 @@ export class Solitaire {
     return this._validActions().length === 0
   }
 
+  get solved() {
+    const boardStateEntries = Array.from(this.boardState.entries())
+    const occupiedEntries = boardStateEntries.filter(([, value]) => value === true)
+    if (occupiedEntries.length === 1) {
+      const occupiedBoardPositionKey = occupiedEntries[0][0]
+      return occupiedBoardPositionKey === BOARD_POSITION_CENTRE.key
+    }
+    return false
+  }
+
   isValidMove = (from, to) =>
     Boolean(this._findAction(from, to))
 
@@ -151,6 +161,10 @@ export class SolitaireEnv {
     return this._solitaire.done
   }
 
+  get solved() {
+    return this._solitaire.solved
+  }
+
   get numActions() {
     return ALL_POSSIBLE_ACTIONS.length
   }
@@ -172,11 +186,35 @@ export class SolitaireEnv {
 
   step = actionIndex => {
     this._solitaire.makeMoveByActionIndex(actionIndex)
-    // TODO: return { observation, reward, done, info }
+    const observation = this._makeObservation()
+    const done = this.done
+    const reward = done ? this._calculateFinalReward() : 0
+    return {
+      observation,
+      reward,
+      done
+    }
   }
 
   reset = () => {
     this._solitaire.reset()
-    // TODO: return { observation, reward, done, info }
+    return this._makeObservation()
+  }
+
+  _makeObservation = () => {
+    const boardStateValues = Array.from(this.boardState.values())
+    return boardStateValues.map(value => value ? 1 : 0)
+  }
+
+  _calculateFinalReward = () => {
+    const boardStateEntries = Array.from(this.boardState.entries())
+    const occupiedEntries = boardStateEntries.filter(([, value]) => value === true)
+    return occupiedEntries.reduce((acc, [key]) => {
+      const boardPosition = BoardPosition.fromKey(key)
+      const rowDistance = Math.abs(boardPosition.row - BOARD_POSITION_CENTRE.row)
+      const colDistance = Math.abs(boardPosition.col - BOARD_POSITION_CENTRE.col)
+      const manhattanDistance = colDistance + rowDistance
+      return acc - manhattanDistance
+    }, 0)
   }
 }
