@@ -10,12 +10,18 @@
 
 <body>
   <div class="board-wrapper">
-    <svg class="board"></svg>
-  </div>
-  <div>
-    <button id="move-btn">Move</button>
-    <button id="auto-btn">Auto</button>
-    <button id="reset-btn">Reset</button>
+    <div>
+      <svg class="board"></svg>
+      <div class="controls-row">
+        <button id="move-btn">Move</button>
+        <button id="auto-btn">Auto</button>
+        <button id="reset-btn">Reset</button>
+      </div>
+      <div class="reward-row reward-row--hidden">
+        <span>Final reward:</span>
+        <span id="final-reward">0</span>
+      </div>
+    </div>
   </div>
   <script src="train.js" type="module"></script>
 </body>

@@ -21,3 +21,22 @@
 .board-piece--selected {
   fill: magenta;
 }
+
+.controls-row {
+  display: flex;
+  justify-content: center;
+}
+
+.controls-row button {
+  margin: .1rem;
+}
+
+.reward-row {
+  display: flex;
+  justify-content: center;
+  margin-top: .1rem;
+}
+
+.reward-row--hidden {
+  visibility: hidden;
+}

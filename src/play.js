@@ -30,11 +30,18 @@ const onBoardClick = (solitaire, boardElement) => ({ offsetX, offsetY }) => {
   svg.updateSelectedBoardPiece(boardElement, selectedBoardPosition)
 }
 
+const onReset = (solitaire, boardElement) => {
+  solitaire.reset()
+  svg.drawBoardPieces(boardElement, solitaire.boardState)
+}
+
 const main = () => {
-  const solitaire = new Solitaire()
   const boardElement = document.querySelector('.board')
+  const resetButtonElement = document.getElementById('reset-btn')
+  const solitaire = new Solitaire()
   svg.initialiseBoard(boardElement, solitaire.boardState)
   boardElement.addEventListener('click', onBoardClick(solitaire, boardElement))
+  resetButtonElement.addEventListener('click', () => onReset(solitaire, boardElement))
 }
 
 main()
