@@ -155,6 +155,9 @@ export class SolitaireEnv {
     return ALL_POSSIBLE_ACTIONS.length
   }
 
+  action = (actionIndex) =>
+    ALL_POSSIBLE_ACTIONS[actionIndex]
+
   get validActionIndices() {
     const indices = []
     ALL_POSSIBLE_ACTIONS.forEach((action, index) => {

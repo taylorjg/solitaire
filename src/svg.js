@@ -48,9 +48,7 @@ export const drawBoardPieces = (boardElement, boardState) => {
     boardElement.removeChild(boardPieceElement)
   }
   for (const [key, value] of boardState.entries()) {
-    if (!value) {
-      continue
-    }
+    if (!value) continue
     const boardPosition = BoardPosition.fromKey(key)
     const [cx, cy] = boardPositionToSvgCoords(boardPosition)
     const r = BOARD_PIECE_RADIUS
@@ -61,7 +59,29 @@ export const drawBoardPieces = (boardElement, boardState) => {
   }
 }
 
-export const initialiseBoard = boardElement => {
+export const findBoardPieceElement = (boardElement, boardPosition) => {
+  const boardPieceElements = boardElement.querySelectorAll('.board-piece')
+  for (const boardPieceElement of boardPieceElements) {
+    if (boardPieceElement.dataset.key === boardPosition.key) {
+      return boardPieceElement
+    }
+  }
+  return undefined
+}
+
+export const updateSelectedBoardPiece = (boardElement, selectedBoardPosition) => {
+  const boardPieceElements = boardElement.querySelectorAll('.board-piece')
+  for (const boardPieceElement of boardPieceElements) {
+    boardPieceElement.classList.remove('board-piece--selected')
+    if (selectedBoardPosition && boardPieceElement.dataset.key === selectedBoardPosition.key) {
+      boardPieceElement.classList.add('board-piece--selected')
+    }
+  }
+}
+
+export const initialiseBoard = (boardElement, boardState) => {
   boardElement.style.width = BOARD_SIZE
   boardElement.style.height = BOARD_SIZE
+  drawBoardPositions(boardElement, boardState)
+  drawBoardPieces(boardElement, boardState)
 }
