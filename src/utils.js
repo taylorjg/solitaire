@@ -4,5 +4,8 @@ export const range = (arg1, arg2) => {
   return Array.from(Array(n).keys()).map(idx => idx + from)
 }
 
+export const zipWithIndex = xs =>
+  Array.from(xs.entries())
+
 export const delay = ms =>
   new Promise(resolve => setTimeout(resolve, ms))

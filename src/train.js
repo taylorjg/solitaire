@@ -1,6 +1,18 @@
 import { SolitaireEnv } from './solitaire.js'
 import * as svg from './svg.js'
 import * as U from './utils.js'
+import { ReplayMemory } from './replay_memory.js'
+
+// ------------------------------------------------------------
+
+const createModel = () => {
+  const model = tf.sequential()
+  model.add(tf.layers.dense({ inputShape: [33], units: 100, activation: 'relu' }))
+  model.add(tf.layers.dense({ units: 100, activation: 'relu' }))
+  model.add(tf.layers.dense({ units: 76 }))
+  model.summary()
+  return model
+}
 
 // ------------------------------------------------------------
 
@@ -78,8 +90,25 @@ class TrainedModelAgent extends AgentBase {
   }
 
   _chooseActionIndex = () => {
-    // TODO: use this._model to choose an action index based on this._observation
+    const statesTensor = tf.tensor([this._observation])
+    const predictionsTensor = this._model.predict(statesTensor)
+    const validActionIndices = this._solitaireEnv.validActionIndices
+    const bestValidPredictionIndices = pickBestValidPredictionIndices(
+      validActionIndices,
+      predictionsTensor)
+    return bestValidPredictionIndices[0]
   }
+}
+
+// ------------------------------------------------------------
+
+const pickBestValidPredictionIndices = (validActionIndices, predictionsTensor) => {
+  const rows1 = predictionsTensor.arraySync()
+  const rows2 = rows1.map(U.zipWithIndex)
+  const rows3 = rows2.map(row => row.filter(([index]) => validActionIndices.includes(index)))
+  const rows4 = rows3.map(row => row.sort(([, value1], [, value2]) => value2 - value1))
+  const rows5 = rows4.map(([[index]]) => index)
+  return rows5
 }
 
 // ------------------------------------------------------------
@@ -151,10 +180,30 @@ const main = async () => {
     }
     const solitaireEnv = new SolitaireEnv()
     const agent = new RandomAgent(solitaireEnv)
+    // const model = createModel()
+    // const agent = new TrainedModelAgent(solitaireEnv, model)
+
     svg.initialiseBoard(boardElement, agent.boardState)
     moveButtonElement.addEventListener('click', () => onMove(elements, agent))
     autoButtonElement.addEventListener('click', () => onAuto(elements, agent))
     resetButtonElement.addEventListener('click', () => onReset(elements, agent))
+
+    const tuples = []
+    U.range(100).forEach(() => {
+      agent.reset()
+      while (!agent.done) {
+        const { actionIndex } = agent.chooseAction()
+        const tuple = agent.step(actionIndex)
+        if (tuple.done) {
+          console.log(`moves: ${JSON.stringify(agent.moves)}; reward: ${tuple.reward}`)
+          tuples.push(tuple)
+        }
+      }
+    })
+    const finalRewards = tuples.map(t => t.reward)
+    const minReward = Math.min(...finalRewards)
+    const maxReward = Math.max(...finalRewards)
+    console.log({ minReward, maxReward })
   } catch (error) {
     console.log(`[main] ERROR: ${error.message}`)
   }
