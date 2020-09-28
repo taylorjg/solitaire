@@ -1,4 +1,4 @@
-import { Solitaire, SolitaireEnv, BoardPosition } from '../src/solitaire.js'
+import { Solitaire, SolitaireEnv, BoardPosition, BoardStateValues } from '../src/solitaire.js'
 import chai from 'chai'
 const expect = chai.expect
 
@@ -8,8 +8,8 @@ const almostSolution = [31, 66, 15, 11, 70, 20, 41, 8, 66, 0, 38, 13, 74, 48, 46
 
 const partitionBoardState = boardState => {
   const boardStateEntries = Array.from(boardState.entries())
-  const occupiedKvps = boardStateEntries.filter(([, value]) => value === true)
-  const unoccupiedKvps = boardStateEntries.filter(([, value]) => value === false)
+  const occupiedKvps = boardStateEntries.filter(([, value]) => value === BoardStateValues.OCCUPIED)
+  const unoccupiedKvps = boardStateEntries.filter(([, value]) => value === BoardStateValues.UNOCCUPIED)
   return [occupiedKvps, unoccupiedKvps]
 }
 
@@ -17,14 +17,14 @@ const expectInitialBoardState = boardState => {
   const [occupiedKvps, unoccupiedKvps] = partitionBoardState(boardState)
   expect(occupiedKvps).to.have.lengthOf(32)
   expect(unoccupiedKvps).to.have.lengthOf(1)
-  expect(boardState.get('3:3')).to.equal(false)
+  expect(boardState.get('3:3')).to.equal(BoardStateValues.UNOCCUPIED)
 }
 
 const expectSolvedBoardState = boardState => {
   const [occupiedKvps, unoccupiedKvps] = partitionBoardState(boardState)
   expect(occupiedKvps).to.have.lengthOf(1)
   expect(unoccupiedKvps).to.have.lengthOf(32)
-  expect(boardState.get('3:3')).to.equal(true)
+  expect(boardState.get('3:3')).to.equal(BoardStateValues.OCCUPIED)
 }
 
 const expectBoardState = (boardState, numMoves) => {
@@ -64,9 +64,9 @@ describe('Solitaire class', () => {
     const to = new BoardPosition(3, 3)
     solitaire.makeMove(from, to)
     expectBoardState(solitaire.boardState, 1)
-    expect(solitaire.boardState.get('3:1')).to.equal(false)
-    expect(solitaire.boardState.get('3:2')).to.equal(false)
-    expect(solitaire.boardState.get('3:3')).to.equal(true)
+    expect(solitaire.boardState.get('3:1')).to.equal(BoardStateValues.UNOCCUPIED)
+    expect(solitaire.boardState.get('3:2')).to.equal(BoardStateValues.UNOCCUPIED)
+    expect(solitaire.boardState.get('3:3')).to.equal(BoardStateValues.OCCUPIED)
   })
 
   it('should correctly reset', () => {

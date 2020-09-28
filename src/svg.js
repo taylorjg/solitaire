@@ -1,4 +1,4 @@
-import { BoardPosition } from './solitaire.js'
+import { BoardPosition, BoardStateValues } from './solitaire.js'
 
 const BOARD_SIZE = 400
 const BOARD_POSITION_RADIUS = BOARD_SIZE / 100
@@ -48,7 +48,7 @@ export const drawBoardPieces = (boardElement, boardState) => {
     boardElement.removeChild(boardPieceElement)
   }
   for (const [key, value] of boardState.entries()) {
-    if (!value) continue
+    if (value === BoardStateValues.UNOCCUPIED) continue
     const boardPosition = BoardPosition.fromKey(key)
     const [cx, cy] = boardPositionToSvgCoords(boardPosition)
     const r = BOARD_PIECE_RADIUS

@@ -77,6 +77,11 @@ const BOARD_POSITIONS = Array.from(boardPositionGenerator())
 const BOARD_POSITION_CENTRE = new BoardPosition(3, 3)
 const ALL_POSSIBLE_ACTIONS = Array.from(allPossibleActionsGenerator())
 
+export const BoardStateValues = {
+  OCCUPIED: true,
+  UNOCCUPIED: false
+}
+
 export class Solitaire {
 
   constructor() {
@@ -94,7 +99,7 @@ export class Solitaire {
 
   get solved() {
     const boardStateEntries = Array.from(this.boardState.entries())
-    const occupiedEntries = boardStateEntries.filter(([, value]) => value === true)
+    const occupiedEntries = boardStateEntries.filter(([, value]) => value === BoardStateValues.OCCUPIED)
     if (occupiedEntries.length === 1) {
       const occupiedBoardPositionKey = occupiedEntries[0][0]
       return occupiedBoardPositionKey === BOARD_POSITION_CENTRE.key
@@ -117,17 +122,20 @@ export class Solitaire {
 
   reset = () => {
     for (const boardPosition of BOARD_POSITIONS) {
-      const value = !boardPosition.sameAs(BOARD_POSITION_CENTRE)
+      const value = boardPosition.sameAs(BOARD_POSITION_CENTRE)
+        ? BoardStateValues.UNOCCUPIED
+        : BoardStateValues.OCCUPIED
       this.boardState.set(boardPosition.key, value)
     }
   }
 
   _makeMove = action => {
-    if (action) {
-      this.boardState.set(action.from.key, false)
-      this.boardState.set(action.via.key, false)
-      this.boardState.set(action.to.key, true)
+    if (!this._validAction(action)) {
+      throw new Error('[Solitaire#_makeMove] specified action is invalid')
     }
+    this.boardState.set(action.from.key, BoardStateValues.UNOCCUPIED)
+    this.boardState.set(action.via.key, BoardStateValues.UNOCCUPIED)
+    this.boardState.set(action.to.key, BoardStateValues.OCCUPIED)
   }
 
   _findAction = (from, to) => {
@@ -140,11 +148,13 @@ export class Solitaire {
   }
 
   _validActions = () =>
-    ALL_POSSIBLE_ACTIONS.filter(action =>
-      this.boardState.get(action.from.key) &&
-      this.boardState.get(action.via.key) &&
-      !this.boardState.get(action.to.key)
-    )
+    ALL_POSSIBLE_ACTIONS.filter(this._validAction)
+
+  _validAction = action =>
+    action &&
+    this.boardState.get(action.from.key) === BoardStateValues.OCCUPIED &&
+    this.boardState.get(action.via.key) === BoardStateValues.OCCUPIED &&
+    this.boardState.get(action.to.key) === BoardStateValues.UNOCCUPIED
 }
 
 export class SolitaireEnv {
@@ -175,9 +185,7 @@ export class SolitaireEnv {
   get validActionIndices() {
     const indices = []
     ALL_POSSIBLE_ACTIONS.forEach((action, index) => {
-      if (this.boardState.get(action.from.key) &&
-        this.boardState.get(action.via.key) &&
-        !this.boardState.get(action.to.key)) {
+      if (this._solitaire._validAction(action)) {
         indices.push(index)
       }
     })
@@ -203,17 +211,17 @@ export class SolitaireEnv {
 
   _makeObservation = () => {
     const boardStateValues = Array.from(this.boardState.values())
-    return boardStateValues.map(value => value ? 1 : 0)
+    return boardStateValues.map(value => value === BoardStateValues.OCCUPIED ? 1 : 0)
   }
 
   _calculateFinalReward = () => {
     const boardStateEntries = Array.from(this.boardState.entries())
-    const occupiedEntries = boardStateEntries.filter(([, value]) => value === true)
+    const occupiedEntries = boardStateEntries.filter(([, value]) => value === BoardStateValues.OCCUPIED)
     return occupiedEntries.reduce((acc, [key]) => {
       const boardPosition = BoardPosition.fromKey(key)
-      const rowDistance = Math.abs(boardPosition.row - BOARD_POSITION_CENTRE.row)
-      const colDistance = Math.abs(boardPosition.col - BOARD_POSITION_CENTRE.col)
-      const manhattanDistance = colDistance + rowDistance
+      const rowDiff = Math.abs(boardPosition.row - BOARD_POSITION_CENTRE.row)
+      const colDiff = Math.abs(boardPosition.col - BOARD_POSITION_CENTRE.col)
+      const manhattanDistance = colDiff + rowDiff
       return acc - manhattanDistance
     }, 0)
   }
