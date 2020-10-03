@@ -5,7 +5,7 @@ let selectedBoardPosition = undefined
 
 const onBoardClick = (solitaire, boardElement) => ({ offsetX, offsetY }) => {
   if (solitaire.done) return
-  const clickedBoardPosition = svg.svgCoordsToBoardPosition(solitaire.boardState, offsetX, offsetY)
+  const clickedBoardPosition = svg.svgCoordsToBoardPosition(solitaire.boardPositions, offsetX, offsetY)
   if (!clickedBoardPosition) return
   const boardPieceElement = svg.findBoardPieceElement(boardElement, clickedBoardPosition)
   if (selectedBoardPosition) {
@@ -17,7 +17,7 @@ const onBoardClick = (solitaire, boardElement) => ({ offsetX, offsetY }) => {
       } else {
         if (solitaire.isValidMove(selectedBoardPosition, clickedBoardPosition)) {
           solitaire.makeMove(selectedBoardPosition, clickedBoardPosition)
-          svg.drawBoardPieces(boardElement, solitaire.boardState)
+          svg.drawBoardPieces(boardElement, solitaire.occupiedBoardPositions)
           selectedBoardPosition = undefined
         }
       }
@@ -32,14 +32,15 @@ const onBoardClick = (solitaire, boardElement) => ({ offsetX, offsetY }) => {
 
 const onReset = (solitaire, boardElement) => {
   solitaire.reset()
-  svg.drawBoardPieces(boardElement, solitaire.boardState)
+  svg.drawBoardPieces(boardElement, solitaire.occupiedBoardPositions)
 }
 
 const main = () => {
   const boardElement = document.querySelector('.board')
   const resetButtonElement = document.getElementById('reset-btn')
   const solitaire = new Solitaire()
-  svg.initialiseBoard(boardElement, solitaire.boardState)
+  svg.initialiseBoard(boardElement, solitaire.boardPositions)
+  svg.drawBoardPieces(boardElement, solitaire.occupiedBoardPositions)
   boardElement.addEventListener('click', onBoardClick(solitaire, boardElement))
   resetButtonElement.addEventListener('click', () => onReset(solitaire, boardElement))
 }

@@ -22,8 +22,12 @@ class AgentBase {
     return this._solitaireEnv.solved
   }
 
-  get boardState() {
-    return this._solitaireEnv.boardState
+  get boardPositions() {
+    return this._solitaireEnv.boardPositions
+  }
+
+  get occupiedBoardPositions() {
+    return this._solitaireEnv.occupiedBoardPositions
   }
 
   get moves() {
@@ -107,7 +111,7 @@ const onMove = async (elements, agent) => {
 
   const tuple = agent.step(actionIndex)
   svg.updateSelectedBoardPiece(elements.boardElement, undefined)
-  svg.drawBoardPieces(elements.boardElement, agent.boardState)
+  svg.drawBoardPieces(elements.boardElement, agent.occupiedBoardPositions)
 
   if (tuple.done) {
     elements.rewardRowElement.classList.remove('reward-row--hidden')
@@ -136,7 +140,7 @@ const onAuto = async (elements, agent) => {
 
 const onReset = (elements, agent) => {
   agent.reset()
-  svg.drawBoardPieces(elements.boardElement, agent.boardState)
+  svg.drawBoardPieces(elements.boardElement, agent.occupiedBoardPositions)
   elements.rewardRowElement.classList.add('reward-row--hidden')
 }
 
@@ -259,7 +263,8 @@ const main = async () => {
     trainButtonElement.addEventListener('click', () => onTrain(solitaireEnv))
 
     const agent = new RandomAgent(solitaireEnv)
-    svg.initialiseBoard(boardElement, agent.boardState)
+    svg.initialiseBoard(boardElement, agent.boardPositions)
+    svg.drawBoardPieces(boardElement, agent.occupiedBoardPositions)
     moveButtonElement.addEventListener('click', () => onMove(elements, agent))
     autoButtonElement.addEventListener('click', () => onAuto(elements, agent))
     resetButtonElement.addEventListener('click', () => onReset(elements, agent))
@@ -273,6 +278,7 @@ const main = async () => {
     const bestFinalReward = Math.max(...finalRewards)
     const averageFinalReward = finalRewards.reduce((acc, finalReward) => acc + finalReward, 0) / finalRewards.length
     console.log({ worstFinalReward, bestFinalReward, averageFinalReward })
+    agent.reset()
   } catch (error) {
     console.log(`[main] ERROR: ${error.message}`)
   }

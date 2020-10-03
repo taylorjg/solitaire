@@ -6,38 +6,28 @@ const solution = [68, 49, 71, 33, 75, 71, 5, 11, 20, 46, 11, 27, 3, 40, 1, 3, 69
 const almostSolution = [31, 66, 15, 11, 70, 20, 41, 8, 66, 0, 38, 13, 74, 48, 46, 41, 72, 29, 45, 74, 11, 4, 41, 65, 69, 20, 40, 9, 0, 13]
 // const terribleSequence = [44, 35, 30, 68, 19, 2]
 
-const partitionBoardState = boardState => {
-  const boardStateEntries = Array.from(boardState.entries())
-  const occupiedKvps = boardStateEntries.filter(([, value]) => value === BoardStateValues.OCCUPIED)
-  const unoccupiedKvps = boardStateEntries.filter(([, value]) => value === BoardStateValues.UNOCCUPIED)
-  return [occupiedKvps, unoccupiedKvps]
+const expectInitialBoardState = solitaire => {
+  expect(solitaire.occupiedBoardPositions).to.have.lengthOf(32)
+  expect(solitaire.unoccupiedBoardPositions).to.have.lengthOf(1)
+  expect(solitaire.unoccupiedBoardPositions[0].key).to.equal('3:3')
 }
 
-const expectInitialBoardState = boardState => {
-  const [occupiedKvps, unoccupiedKvps] = partitionBoardState(boardState)
-  expect(occupiedKvps).to.have.lengthOf(32)
-  expect(unoccupiedKvps).to.have.lengthOf(1)
-  expect(boardState.get('3:3')).to.equal(BoardStateValues.UNOCCUPIED)
+const expectSolvedBoardState = solitaire => {
+  expect(solitaire.occupiedBoardPositions).to.have.lengthOf(1)
+  expect(solitaire.occupiedBoardPositions[0].key).to.equal('3:3')
+  expect(solitaire.unoccupiedBoardPositions).to.have.lengthOf(32)
 }
 
-const expectSolvedBoardState = boardState => {
-  const [occupiedKvps, unoccupiedKvps] = partitionBoardState(boardState)
-  expect(occupiedKvps).to.have.lengthOf(1)
-  expect(unoccupiedKvps).to.have.lengthOf(32)
-  expect(boardState.get('3:3')).to.equal(BoardStateValues.OCCUPIED)
-}
-
-const expectBoardState = (boardState, numMoves) => {
-  const [occupiedKvps, unoccupiedKvps] = partitionBoardState(boardState)
-  expect(occupiedKvps).to.have.lengthOf(32 - numMoves)
-  expect(unoccupiedKvps).to.have.lengthOf(1 + numMoves)
+const expectBoardState = (solitaire, numMoves) => {
+  expect(solitaire.occupiedBoardPositions).to.have.lengthOf(32 - numMoves)
+  expect(solitaire.unoccupiedBoardPositions).to.have.lengthOf(1 + numMoves)
 }
 
 describe('Solitaire class', () => {
 
   it('should have the expected initial state', () => {
     const solitaire = new Solitaire()
-    expectInitialBoardState(solitaire.boardState)
+    expectInitialBoardState(solitaire)
     expect(solitaire.done).to.be.false
     expect(solitaire.solved).to.be.false
   })
@@ -61,12 +51,16 @@ describe('Solitaire class', () => {
   it('should correctly make a move', () => {
     const solitaire = new Solitaire()
     const from = new BoardPosition(3, 1)
+    const via = new BoardPosition(3, 2)
     const to = new BoardPosition(3, 3)
     solitaire.makeMove(from, to)
-    expectBoardState(solitaire.boardState, 1)
-    expect(solitaire.boardState.get('3:1')).to.equal(BoardStateValues.UNOCCUPIED)
-    expect(solitaire.boardState.get('3:2')).to.equal(BoardStateValues.UNOCCUPIED)
-    expect(solitaire.boardState.get('3:3')).to.equal(BoardStateValues.OCCUPIED)
+    expectBoardState(solitaire, 1)
+    const pluckKey = boardPosition => boardPosition.key
+    const occupiedKeys = solitaire.occupiedBoardPositions.map(pluckKey)
+    const unoccupiedKeys = solitaire.unoccupiedBoardPositions.map(pluckKey)
+    expect(unoccupiedKeys).to.include(from.key)
+    expect(unoccupiedKeys).to.include(via.key)
+    expect(occupiedKeys).to.include(to.key)
   })
 
   it('should correctly reset', () => {
@@ -74,11 +68,11 @@ describe('Solitaire class', () => {
     for (const actionIndex of solution) {
       solitaire.makeMoveByActionIndex(actionIndex)
     }
-    expectSolvedBoardState(solitaire.boardState)
+    expectSolvedBoardState(solitaire)
     expect(solitaire.done).to.be.true
     expect(solitaire.solved).to.be.true
     solitaire.reset()
-    expectInitialBoardState(solitaire.boardState)
+    expectInitialBoardState(solitaire)
     expect(solitaire.done).to.be.false
     expect(solitaire.solved).to.be.false
   })
@@ -122,7 +116,7 @@ describe('Solitaire class', () => {
     for (const actionIndex of solution) {
       solitaire.makeMoveByActionIndex(actionIndex)
     }
-    expectSolvedBoardState(solitaire.boardState)
+    expectSolvedBoardState(solitaire)
   })
 })
 
@@ -130,7 +124,7 @@ describe('SolitaireEnv class', () => {
 
   it('should have the expected initial state', () => {
     const solitaireEnv = new SolitaireEnv()
-    expectInitialBoardState(solitaireEnv.boardState)
+    expectInitialBoardState(solitaireEnv)
   })
 
   it('should have the expected number of possible actions', () => {
@@ -150,7 +144,7 @@ describe('SolitaireEnv class', () => {
     for (const actionIndex of solution) {
       solitaireEnv.step(actionIndex)
     }
-    expectSolvedBoardState(solitaireEnv.boardState)
+    expectSolvedBoardState(solitaireEnv)
     expect(solitaireEnv.done).to.be.true
     expect(solitaireEnv.solved).to.be.true
     solitaireEnv.reset()
@@ -164,9 +158,9 @@ describe('SolitaireEnv class', () => {
     for (const actionIndex of solution.slice(0, numMoves)) {
       solitaireEnv.step(actionIndex)
     }
-    expectBoardState(solitaireEnv.boardState, numMoves)
+    expectBoardState(solitaireEnv, numMoves)
     solitaireEnv.reset()
-    expectInitialBoardState(solitaireEnv.boardState)
+    expectInitialBoardState(solitaireEnv)
   })
 
   // TODO: add tests re:

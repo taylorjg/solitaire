@@ -89,8 +89,22 @@ export class Solitaire {
     this.reset()
   }
 
-  get boardState() {
-    return this._boardState
+  get boardPositions() {
+    return BOARD_POSITIONS
+  }
+
+  get occupiedBoardPositions() {
+    return Array.from(this._boardState.entries())
+      .filter(([, value]) => value === BoardStateValues.OCCUPIED)
+      .map(([key]) => key)
+      .map(BoardPosition.fromKey)
+  }
+
+  get unoccupiedBoardPositions() {
+    return Array.from(this._boardState.entries())
+      .filter(([, value]) => value === BoardStateValues.UNOCCUPIED)
+      .map(([key]) => key)
+      .map(BoardPosition.fromKey)
   }
 
   get done() {
@@ -98,13 +112,8 @@ export class Solitaire {
   }
 
   get solved() {
-    const boardStateEntries = Array.from(this.boardState.entries())
-    const occupiedEntries = boardStateEntries.filter(([, value]) => value === BoardStateValues.OCCUPIED)
-    if (occupiedEntries.length === 1) {
-      const occupiedBoardPositionKey = occupiedEntries[0][0]
-      return occupiedBoardPositionKey === BOARD_POSITION_CENTRE.key
-    }
-    return false
+    const xs = this.occupiedBoardPositions
+    return xs.length === 1 && xs[0].key === BOARD_POSITION_CENTRE.key
   }
 
   isValidMove = (from, to) =>
@@ -125,7 +134,7 @@ export class Solitaire {
       const value = boardPosition.sameAs(BOARD_POSITION_CENTRE)
         ? BoardStateValues.UNOCCUPIED
         : BoardStateValues.OCCUPIED
-      this.boardState.set(boardPosition.key, value)
+      this._boardState.set(boardPosition.key, value)
     }
   }
 
@@ -133,9 +142,9 @@ export class Solitaire {
     if (!this._validAction(action)) {
       throw new Error('[Solitaire#_makeMove] specified action is invalid')
     }
-    this.boardState.set(action.from.key, BoardStateValues.UNOCCUPIED)
-    this.boardState.set(action.via.key, BoardStateValues.UNOCCUPIED)
-    this.boardState.set(action.to.key, BoardStateValues.OCCUPIED)
+    this._boardState.set(action.from.key, BoardStateValues.UNOCCUPIED)
+    this._boardState.set(action.via.key, BoardStateValues.UNOCCUPIED)
+    this._boardState.set(action.to.key, BoardStateValues.OCCUPIED)
   }
 
   _findAction = (from, to) => {
@@ -152,9 +161,9 @@ export class Solitaire {
 
   _validAction = action =>
     action &&
-    this.boardState.get(action.from.key) === BoardStateValues.OCCUPIED &&
-    this.boardState.get(action.via.key) === BoardStateValues.OCCUPIED &&
-    this.boardState.get(action.to.key) === BoardStateValues.UNOCCUPIED
+    this._boardState.get(action.from.key) === BoardStateValues.OCCUPIED &&
+    this._boardState.get(action.via.key) === BoardStateValues.OCCUPIED &&
+    this._boardState.get(action.to.key) === BoardStateValues.UNOCCUPIED
 }
 
 export class SolitaireEnv {
@@ -163,8 +172,16 @@ export class SolitaireEnv {
     this._solitaire = new Solitaire()
   }
 
-  get boardState() {
-    return this._solitaire.boardState
+  get boardPositions() {
+    return this._solitaire.boardPositions
+  }
+
+  get occupiedBoardPositions() {
+    return this._solitaire.occupiedBoardPositions
+  }
+
+  get unoccupiedBoardPositions() {
+    return this._solitaire.unoccupiedBoardPositions
   }
 
   get done() {
@@ -210,15 +227,12 @@ export class SolitaireEnv {
   }
 
   _makeObservation = () => {
-    const boardStateValues = Array.from(this.boardState.values())
+    const boardStateValues = Array.from(this._solitaire._boardState.values())
     return boardStateValues.map(value => value === BoardStateValues.OCCUPIED ? 1 : 0)
   }
 
   _calculateFinalReward = () => {
-    const boardStateEntries = Array.from(this.boardState.entries())
-    const occupiedEntries = boardStateEntries.filter(([, value]) => value === BoardStateValues.OCCUPIED)
-    return occupiedEntries.reduce((acc, [key]) => {
-      const boardPosition = BoardPosition.fromKey(key)
+    return this.occupiedBoardPositions.reduce((acc, boardPosition) => {
       const rowDiff = Math.abs(boardPosition.row - BOARD_POSITION_CENTRE.row)
       const colDiff = Math.abs(boardPosition.col - BOARD_POSITION_CENTRE.col)
       const manhattanDistance = colDiff + rowDiff
